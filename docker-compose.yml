@@ -1,0 +1,36 @@
+services:
+  accounting:
+    build: .
+    container_name: nova-accounting
+    ports:
+      - "3334:3334"
+    volumes:
+      - accounting-data:/app/.data
+    env_file:
+      - .env
+    environment:
+      - DATA_DIR=/app/.data
+      - SESSION_COOKIE_DOMAIN=.novactrl.nl
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    mem_limit: 1024m
+    mem_reservation: 256m
+    cpus: 1.0
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 1024M }
+        reservations: { memory: 256M }
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://0.0.0.0:3334/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  accounting-data:

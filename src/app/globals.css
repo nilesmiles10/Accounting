@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0a0a0f;
+  --surface: #12121a;
+  --surface-hover: #1a1a25;
+  --border: #1e1e2e;
+  --foreground: #e4e4e7;
+  --muted: #71717a;
+  --accent: #6366f1;
+  --accent-hover: #818cf8;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --error: #ef4444;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  /* M28: next/font exposes the Inter family through --font-inter (see layout.tsx).
+     Fallback to system-ui while the font is loading or if CDN fetch fails. */
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+}
+
+/* M22: global focus-visible ring so keyboard users always see focus.
+   Components that opt out (outline-none) should provide their own
+   focus-visible styling via focus-visible:outline-… classes. */
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* M23: skip-to-content link. Visually hidden until focused by keyboard. */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 8px;
+  z-index: 1000;
+  background: var(--accent);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 14px;
+  transition: top 0.15s;
+}
+.skip-link:focus {
+  top: 8px;
+}
+
+/* Screen-reader-only utility (used for <label> elements that should be
+   visible to assistive tech but not shown in the UI). Matches Tailwind's
+   `sr-only` so we're consistent regardless of how utilities are purged. */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0);
+  white-space: nowrap; border-width: 0;
+}
+
+.prose-dark h1 { @apply text-xl font-bold text-zinc-100 mb-3 mt-5; }
+.prose-dark h2 { @apply text-lg font-semibold text-zinc-200 mb-2 mt-4; }
+.prose-dark h3 { @apply text-base font-semibold text-zinc-300 mb-2 mt-3; }
+.prose-dark p { @apply text-zinc-300 mb-2 leading-relaxed; }
+.prose-dark ul { @apply list-disc list-inside mb-2 text-zinc-300; }
+.prose-dark ol { @apply list-decimal list-inside mb-2 text-zinc-300; }
+.prose-dark li { @apply mb-1; }
+.prose-dark code { @apply bg-zinc-800 text-indigo-300 px-1.5 py-0.5 rounded text-sm; }
+.prose-dark pre { @apply bg-zinc-900 border border-zinc-800 rounded-lg p-3 mb-3 overflow-x-auto; }
+.prose-dark pre code { @apply bg-transparent p-0; }
+.prose-dark a { @apply text-indigo-400 hover:text-indigo-300 underline; }
+.prose-dark blockquote { @apply border-l-2 border-indigo-500 pl-3 italic text-zinc-400 my-2; }
+.prose-dark hr { @apply border-zinc-700 my-4; }
+.prose-dark strong { @apply text-zinc-100 font-semibold; }
+.prose-dark table { @apply w-full border-collapse mb-3; }
+.prose-dark th { @apply text-left p-2 border-b border-zinc-700 text-zinc-200 font-semibold; }
+.prose-dark td { @apply p-2 border-b border-zinc-800 text-zinc-300; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--background); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+textarea {
+  @apply bg-zinc-900 border border-zinc-700 rounded-lg text-zinc-200 font-mono text-sm;
+}
+textarea:focus {
+  @apply outline-none ring-1 ring-indigo-500 border-indigo-500;
+}
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in {
+  animation: slide-in 0.2s ease-out;
+}
