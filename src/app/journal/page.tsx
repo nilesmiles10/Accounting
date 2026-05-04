@@ -90,6 +90,14 @@ export default function JournalPage({
                     → inkoop
                   </Link>
                 )}
+                {e.source_type === "bank_match" && (
+                  <Link
+                    href={`/bank/transactions?status=matched`}
+                    className="text-xs text-emerald-400 hover:text-emerald-300"
+                  >
+                    → bank-mutatie
+                  </Link>
+                )}
               </header>
               <table className="w-full text-sm">
                 <thead className="text-[10px] text-zinc-500 uppercase tracking-wider">

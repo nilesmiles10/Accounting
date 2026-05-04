@@ -201,22 +201,24 @@ export function applyMatch(input: {
       if (inv.status === "paid") {
         // Al betaald — maar transactie nog niet gekoppeld; alleen match-record.
       } else {
+        const bankRef = tx.description ? ` · ${tx.description}` : "";
+        const cpName = tx.counterparty_name ? ` · ${tx.counterparty_name}` : "";
         const entry = post({
           date: tx.date,
-          description: `Betaling factuur ${inv.number} via ${account.display_name}`,
+          description: `Betaling factuur ${inv.number} via ${account.display_name}${cpName}${bankRef}`,
           source_type: "bank_match",
           source_id: tx.id,
           company_id: inv.company_id,
           lines: [
             {
               account_code: account.account_code,
-              description: `Ontvangen ${inv.number}`,
+              description: `Ontvangen ${inv.number}${cpName}${bankRef}`,
               debit_cents: inv.total_cents,
               client_id: inv.client_id,
             },
             {
               account_code: "1300",
-              description: `Aflossing debiteur — ${inv.number}`,
+              description: `Aflossing debiteur — ${inv.number}${cpName}`,
               credit_cents: inv.total_cents,
               client_id: inv.client_id,
             },
@@ -249,22 +251,25 @@ export function applyMatch(input: {
       if (inv.status === "paid") {
         // Al betaald — alleen match-record
       } else {
+        const invNr = inv.supplier_invoice_number || "";
+        const cpName = tx.counterparty_name ? ` · ${tx.counterparty_name}` : "";
+        const bankRef = tx.description ? ` · ${tx.description}` : "";
         const entry = post({
           date: tx.date,
-          description: `Betaling inkoop ${inv.supplier_invoice_number || ""} via ${account.display_name}`.trim(),
+          description: `Betaling inkoop ${invNr} via ${account.display_name}${cpName}${bankRef}`.trim(),
           source_type: "bank_match",
           source_id: tx.id,
           company_id: inv.company_id,
           lines: [
             {
               account_code: "1600",
-              description: `Aflossing crediteur — ${inv.supplier_invoice_number || ""}`,
+              description: `Aflossing crediteur — ${invNr}${cpName}`,
               debit_cents: inv.total_cents,
               supplier_id: inv.supplier_id ?? null,
             },
             {
               account_code: account.account_code,
-              description: `Betaald ${inv.supplier_invoice_number || ""}`,
+              description: `Betaald ${invNr}${bankRef}`,
               credit_cents: inv.total_cents,
               supplier_id: inv.supplier_id ?? null,
             },
@@ -353,9 +358,22 @@ export function bookTransactionDirect(input: {
 
   const amount = Math.abs(tx.amount_cents);
   const incoming = tx.amount_cents > 0;
-  const desc =
-    input.description ||
-    `${tx.counterparty_name || tx.description || "Direct geboekt"}`;
+  // Subject = wat user kort herkent (eigen omschrijving > counterparty > bank desc)
+  const subject =
+    input.description?.trim() ||
+    tx.counterparty_name ||
+    tx.description ||
+    "Bank-mutatie";
+  // Reference = bank-kenmerk (omschrijving uit het bankafschrift). Komt
+  // mee als detail-regel zodat factuurnummer / mededeling traceerbaar
+  // blijft in journaal en grootboekkaart, ook als user een eigen
+  // omschrijving meegaf.
+  const bankRef = tx.description && tx.description !== subject
+    ? tx.description
+    : null;
+  // Per-line description: subject; bank-ref hangen we als suffix aan
+  // zodat de kenmerk meekomt in de grootboekkaart-rij.
+  const lineDesc = bankRef ? `${subject} — ${bankRef}` : subject;
 
   let journalId: string | null = null;
   try {
@@ -363,12 +381,12 @@ export function bookTransactionDirect(input: {
       ? [
           {
             account_code: account.account_code,
-            description: desc,
+            description: lineDesc,
             debit_cents: amount,
           },
           {
             account_code: input.account_code,
-            description: desc,
+            description: lineDesc,
             credit_cents: amount,
             vat_code: input.vat_code ?? null,
           },
@@ -376,19 +394,19 @@ export function bookTransactionDirect(input: {
       : [
           {
             account_code: input.account_code,
-            description: desc,
+            description: lineDesc,
             debit_cents: amount,
             vat_code: input.vat_code ?? null,
           },
           {
             account_code: account.account_code,
-            description: desc,
+            description: lineDesc,
             credit_cents: amount,
           },
         ];
     const entry = post({
       date: tx.date,
-      description: `${desc} via ${account.display_name}`,
+      description: `${subject} · ${account.display_name}${bankRef ? ` · ${bankRef}` : ""}`,
       source_type: "bank_match",
       source_id: tx.id,
       company_id: account.company_id,
