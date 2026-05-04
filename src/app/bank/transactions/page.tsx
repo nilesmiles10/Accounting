@@ -5,6 +5,7 @@ import {
   listTransactions,
   type BankTxStatus,
 } from "@/lib/bank/transactions";
+import { listAccounts } from "@/lib/ledger/accounts";
 import TransactionRow from "./TransactionRow";
 import AutoMatchButton from "../AutoMatchButton";
 
@@ -16,6 +17,18 @@ export default function TransactionsPage({
   searchParams: { account?: string; status?: BankTxStatus };
 }) {
   const accounts = listBankAccounts({ activeOnly: true });
+  // Bookable accounts voor direct boeken — alle behalve 1xxx system
+  // accounts (bank/debiteuren/BTW worden door auto-journaal beheerd).
+  const allLedger = listAccounts({ activeOnly: true });
+  const bookableAccounts = allLedger.filter((a) => {
+    if (a.type === "expense") return true;
+    if (a.type === "income") return true;
+    if (a.type === "asset" && !a.code.startsWith("1")) return true;
+    if (a.type === "liability" && !["1600", "1700", "1500"].includes(a.code))
+      return true;
+    if (a.type === "equity") return true;
+    return false;
+  });
   const status: BankTxStatus = (searchParams.status as BankTxStatus) || "unmatched";
   const txs = listTransactions({
     bank_account_id: searchParams.account,
@@ -79,6 +92,7 @@ export default function TransactionsPage({
                 accountById.get(tx.bank_account_id)?.display_name || "—"
               }
               status={status}
+              bookableAccounts={bookableAccounts}
             />
           ))}
         </div>

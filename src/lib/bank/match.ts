@@ -314,6 +314,122 @@ export function applyMatch(input: {
 }
 
 /**
+ * Boek transactie rechtstreeks op een grootboekrekening, zonder factuur.
+ * Voor: bankkosten, privé-opnames, overboekingen tussen eigen rekeningen,
+ * btw-afdrachten, etc.
+ *
+ * Boeking-richting:
+ *   - Inkomend (amount > 0): Debet bank / Credit gekozen rekening
+ *   - Uitgaand (amount < 0): Debet gekozen rekening / Credit bank
+ *
+ * Markeert transactie als matched zodat 'ie uit de unmatched-lijst gaat.
+ */
+export function bookTransactionDirect(input: {
+  transaction_id: string;
+  account_code: string;
+  description?: string;
+  vat_code?: string | null;
+}): { ok: boolean; error?: string; journal_entry_id?: string } {
+  const tx = getTransaction(input.transaction_id);
+  if (!tx) return { ok: false, error: "Transactie niet gevonden" };
+  if (tx.status === "matched") {
+    return { ok: false, error: "Transactie is al gematched" };
+  }
+  const account = getBankAccount(tx.bank_account_id);
+  if (!account) {
+    return { ok: false, error: "Bank-rekening niet gevonden" };
+  }
+
+  // Sanity: account_code moet bestaan in COA
+  const db = getDb();
+  const accCheck = db
+    .prepare("SELECT code FROM chart_of_accounts WHERE code = ? AND tenant_id = ?")
+    .get(input.account_code, getCurrentTenantId()) as
+    | { code: string }
+    | undefined;
+  if (!accCheck) {
+    return { ok: false, error: `Rekening ${input.account_code} bestaat niet` };
+  }
+
+  const amount = Math.abs(tx.amount_cents);
+  const incoming = tx.amount_cents > 0;
+  const desc =
+    input.description ||
+    `${tx.counterparty_name || tx.description || "Direct geboekt"}`;
+
+  let journalId: string | null = null;
+  try {
+    const lines: Parameters<typeof post>[0]["lines"] = incoming
+      ? [
+          {
+            account_code: account.account_code,
+            description: desc,
+            debit_cents: amount,
+          },
+          {
+            account_code: input.account_code,
+            description: desc,
+            credit_cents: amount,
+            vat_code: input.vat_code ?? null,
+          },
+        ]
+      : [
+          {
+            account_code: input.account_code,
+            description: desc,
+            debit_cents: amount,
+            vat_code: input.vat_code ?? null,
+          },
+          {
+            account_code: account.account_code,
+            description: desc,
+            credit_cents: amount,
+          },
+        ];
+    const entry = post({
+      date: tx.date,
+      description: `${desc} via ${account.display_name}`,
+      source_type: "bank_match",
+      source_id: tx.id,
+      company_id: account.company_id,
+      lines,
+    });
+    journalId = entry.id;
+
+    db.prepare(
+      `INSERT INTO bank_matches (id, tenant_id, transaction_id, target_type,
+         target_id, amount_cents, journal_entry_id, confidence, matched_at, matched_by)
+       VALUES (?, ?, ?, 'account', ?, ?, ?, 'manual', ?, 'user')`,
+    ).run(
+      crypto.randomUUID(),
+      getCurrentTenantId(),
+      tx.id,
+      input.account_code,
+      tx.amount_cents,
+      journalId,
+      Date.now(),
+    );
+    setTransactionStatus(tx.id, "matched");
+
+    return { ok: true, journal_entry_id: journalId };
+  } catch (err) {
+    log.error(
+      {
+        scope: "bank/book-direct",
+        tx_id: tx.id,
+        account_code: input.account_code,
+        err: err instanceof Error ? err.message : String(err),
+      },
+      "direct boeking mislukt",
+    );
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Boeking mislukt",
+    };
+  }
+}
+
+/**
  * Run auto-match over alle unmatched transacties: voor elke één met
  * confidence=auto_high, koppel automatisch. Voor lager → blijft op
  * unmatched, gebruiker kiest.
