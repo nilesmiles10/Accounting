@@ -142,9 +142,46 @@ export async function extractInvoiceFromFile(
     throw new Error("ANTHROPIC_API_KEY ontbreekt — zet hem in de env");
   }
 
-  const { contentBlock, mediaType } = detectMediaType(filePath);
+  const { contentBlock, mediaType: detectedMime } = detectMediaType(filePath);
   const fullPath = path.join(PDF_DIR, path.basename(filePath));
-  const buffer = await fs.readFile(fullPath);
+  let buffer = await fs.readFile(fullPath);
+  let mediaType = detectedMime;
+
+  // Claude Vision images limit: 5 MB base64 = ~3.7 MB raw bytes.
+  // iPhone foto's zijn 4-12 MB raw — moeten we comprimeren. PDF heeft
+  // 32 MB limit dus die laten we ongewijzigd.
+  if (contentBlock === "image" && buffer.length > 3.5 * 1024 * 1024) {
+    try {
+      // Dynamic import zodat sharp alleen geladen wordt als 't moet (saves
+      // boot time bij PDF-only flows).
+      const sharp = (await import("sharp")).default;
+      const compressed = await sharp(buffer)
+        .rotate() // EXIF orientation toepassen — iPhone-foto's komen vaak gedraaid binnen
+        .resize(2400, 2400, { fit: "inside", withoutEnlargement: true })
+        .jpeg({ quality: 85, mozjpeg: true })
+        .toBuffer();
+      log.info(
+        {
+          scope: "accounting/ocr",
+          original_bytes: buffer.length,
+          compressed_bytes: compressed.length,
+          ratio: (compressed.length / buffer.length).toFixed(2),
+        },
+        "image compressed for Claude Vision",
+      );
+      buffer = Buffer.from(compressed);
+      mediaType = "image/jpeg"; // sharp output is altijd jpeg in deze flow
+    } catch (err) {
+      log.warn(
+        {
+          scope: "accounting/ocr",
+          err: err instanceof Error ? err.message : String(err),
+        },
+        "sharp compression failed — sending original (Claude may reject if >5MB)",
+      );
+    }
+  }
+
   const base64 = buffer.toString("base64");
 
   await anthropicLimiter.acquire();

@@ -8,6 +8,7 @@ const nextConfig = {
       "qrcode",
       "pino",
       "pino-pretty",
+      "sharp",
     ],
   },
   async headers() {
