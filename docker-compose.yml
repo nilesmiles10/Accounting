@@ -3,7 +3,7 @@ services:
     build: .
     container_name: nova-accounting
     ports:
-      - "3334:3334"
+      - "3336:3336"
     volumes:
       - accounting-data:/app/.data
     env_file:
@@ -27,7 +27,7 @@ services:
         max-size: "10m"
         max-file: "5"
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://0.0.0.0:3334/api/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://0.0.0.0:3336/api/health"]
       interval: 30s
       timeout: 5s
       retries: 3

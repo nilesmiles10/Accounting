@@ -6,7 +6,7 @@ set -euo pipefail
 
 cd /opt/nova-accounting
 
-HEALTH_URL="http://localhost:3334/api/health"
+HEALTH_URL="http://localhost:3336/api/health"
 HEALTH_TIMEOUT="${HEALTH_TIMEOUT:-60}"
 
 PREVIOUS_HEAD="$(git rev-parse HEAD)"
