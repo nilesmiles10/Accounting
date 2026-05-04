@@ -22,6 +22,9 @@ RUN adduser --system --uid 1001 nextjs
 
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Standalone build neemt src/ niet mee — migrate-bestanden expliciet
+# kopieren naar /app/migrations.
+COPY --from=builder --chown=nextjs:nodejs /app/src/lib/migrations ./migrations
 RUN echo "" > ./changelog.txt
 
 RUN mkdir -p /app/.data && chown nextjs:nodejs /app/.data

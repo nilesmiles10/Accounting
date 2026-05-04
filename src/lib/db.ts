@@ -15,7 +15,14 @@ import { log } from "@/lib/logger";
 const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), ".data");
 const ACCOUNTING_DIR = path.join(DATA_DIR, "accounting");
 const DB_PATH = path.join(ACCOUNTING_DIR, "accounting.db");
-const MIGRATIONS_DIR = path.join(process.cwd(), "src/lib/accounting/migrations");
+// Migrations zitten als raw .sql in src/lib/migrations. Standalone Next.js
+// build neemt src/ niet mee — Dockerfile copieert ze apart naar
+// /app/migrations zodat dit pad in productie ook werkt.
+const MIGRATIONS_DIR =
+  process.env.MIGRATIONS_DIR ||
+  (fs.existsSync(path.join(process.cwd(), "migrations"))
+    ? path.join(process.cwd(), "migrations")
+    : path.join(process.cwd(), "src/lib/migrations"));
 
 let cached: DB | null = null;
 
