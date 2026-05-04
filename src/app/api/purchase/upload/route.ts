@@ -25,13 +25,27 @@ const ALLOWED_MIME: Record<string, string> = {
 };
 
 export async function POST(request: NextRequest) {
+  log.info({ scope: "purchase-upload" }, "POST received");
   const deny = await checkAccountingAccess(request);
-  if (deny) return deny;
+  if (deny) {
+    log.warn({ scope: "purchase-upload" }, "auth denied");
+    return deny;
+  }
 
   try {
     const form = await request.formData();
     const file = form.get("pdf");
     const company_id = String(form.get("company_id") || "");
+    log.info(
+      {
+        scope: "purchase-upload",
+        company_id,
+        file_type: file instanceof File ? file.type : typeof file,
+        file_name: file instanceof File ? file.name : null,
+        file_size: file instanceof File ? file.size : null,
+      },
+      "upload payload parsed",
+    );
     if (!company_id) {
       return NextResponse.json(
         { error: "company_id is verplicht" },
@@ -82,14 +96,27 @@ export async function POST(request: NextRequest) {
     // doorgaan of opnieuw OCR-en.
     let ocrResult: { confidence: number } | null = null;
     try {
+      log.info(
+        { scope: "purchase-upload", invoice_id: invoice.id, filename },
+        "starting OCR",
+      );
       const r = await ocrPurchaseInvoice(invoice.id);
       ocrResult = { confidence: r.confidence };
-    } catch (err) {
-      log.warn(
+      log.info(
         {
-          scope: "accounting/purchase-upload",
+          scope: "purchase-upload",
+          invoice_id: invoice.id,
+          confidence: r.confidence,
+        },
+        "OCR finished",
+      );
+    } catch (err) {
+      log.error(
+        {
+          scope: "purchase-upload",
           invoice_id: invoice.id,
           err: err instanceof Error ? err.message : String(err),
+          stack: err instanceof Error ? err.stack?.slice(0, 500) : null,
         },
         "OCR fase faalde — factuur staat klaar voor handmatig invullen",
       );
