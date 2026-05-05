@@ -78,7 +78,7 @@ export default function AssetsPage({
         </div>
       )}
 
-      <section className="grid grid-cols-3 gap-3">
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <SummaryCard
           label="Aanschafwaarde"
           value={formatEUR(totalPurchase)}
@@ -129,7 +129,7 @@ export default function AssetsPage({
             </p>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">{/* mobile-overflow */}<table className="w-full text-sm">
             <thead className="text-[10px] text-zinc-500 uppercase tracking-wider bg-zinc-900/40">
               <tr>
                 <th className="text-left px-4 py-2 font-medium w-24">Code</th>
@@ -187,7 +187,7 @@ export default function AssetsPage({
                 );
               })}
             </tbody>
-          </table>
+          </table></div>
         )}
       </section>
 

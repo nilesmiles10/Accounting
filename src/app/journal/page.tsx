@@ -99,7 +99,7 @@ export default function JournalPage({
                   </Link>
                 )}
               </header>
-              <table className="w-full text-sm">
+              <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">{/* mobile-overflow */}<table className="w-full text-sm">
                 <thead className="text-[10px] text-zinc-500 uppercase tracking-wider">
                   <tr>
                     <th className="text-left px-4 py-1.5 font-medium">
@@ -141,7 +141,7 @@ export default function JournalPage({
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             </article>
           ))}
         </div>

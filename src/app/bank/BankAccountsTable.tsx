@@ -51,7 +51,7 @@ export default function BankAccountsTable({
 
   return (
     <>
-      <table className="w-full text-sm">
+      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">{/* mobile-overflow */}<table className="w-full text-sm">
         <thead className="text-[10px] text-zinc-500 uppercase tracking-wider bg-zinc-900/20">
           <tr>
             <th className="text-left px-4 py-2 font-medium">Naam</th>
@@ -140,7 +140,7 @@ export default function BankAccountsTable({
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
 
       {editing && (
         <div
@@ -148,7 +148,7 @@ export default function BankAccountsTable({
           onClick={() => setEditingId(null)}
         >
           <div
-            className="max-w-2xl w-full"
+            className="max-w-2xl w-full mx-2 sm:mx-0"
             onClick={(e) => e.stopPropagation()}
           >
             <BankAccountForm

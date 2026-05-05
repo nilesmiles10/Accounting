@@ -117,7 +117,7 @@ export default function LedgerManager({
                 {formatEUR(total)}
               </span>
             </div>
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">{/* mobile-overflow */}<table className="w-full text-sm">
               <tbody>
                 {list.map((a) =>
                   editingCode === a.code ? (
@@ -187,7 +187,7 @@ export default function LedgerManager({
                   ),
                 )}
               </tbody>
-            </table>
+            </table></div>
           </section>
         );
       })}

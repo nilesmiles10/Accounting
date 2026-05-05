@@ -171,7 +171,7 @@ function Lines({
   lines: Array<{ code: string; name: string; amount_cents: number }>;
 }) {
   return (
-    <table className="w-full text-sm">
+    <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">{/* mobile-overflow */}<table className="w-full text-sm">
       <tbody>
         {lines.map((l) => (
           <tr key={l.code} className="border-t border-[var(--border)]">
@@ -190,6 +190,6 @@ function Lines({
           </tr>
         ))}
       </tbody>
-    </table>
+    </table></div>
   );
 }

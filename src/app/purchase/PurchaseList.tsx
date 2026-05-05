@@ -94,7 +94,7 @@ export default function PurchaseList({
         </div>
       ) : (
         <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">{/* mobile-overflow */}<table className="w-full text-sm">
             <thead className="bg-zinc-900/50 text-xs text-zinc-500 uppercase tracking-wider">
               <tr>
                 <th className="text-left px-4 py-2 font-medium">Factuur</th>
@@ -142,7 +142,7 @@ export default function PurchaseList({
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
       )}
     </div>

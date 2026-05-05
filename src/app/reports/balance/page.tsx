@@ -84,7 +84,7 @@ export default function BalancePage({
           {report.equity_lines.length > 0 && (
             <Lines lines={report.equity_lines} />
           )}
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">{/* mobile-overflow */}<table className="w-full text-sm">
             <tbody>
               <tr className="border-t border-[var(--border)]">
                 <td className="px-4 py-1.5 font-mono text-zinc-500 w-20">—</td>
@@ -102,7 +102,7 @@ export default function BalancePage({
                 </td>
               </tr>
             </tbody>
-          </table>
+          </table></div>
         </section>
       </div>
     </div>
@@ -115,7 +115,7 @@ function Lines({
   lines: Array<{ code: string; name: string; amount_cents: number }>;
 }) {
   return (
-    <table className="w-full text-sm">
+    <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">{/* mobile-overflow */}<table className="w-full text-sm">
       <tbody>
         {lines.map((l) => (
           <tr key={l.code} className="border-t border-[var(--border)]">
@@ -134,6 +134,6 @@ function Lines({
           </tr>
         ))}
       </tbody>
-    </table>
+    </table></div>
   );
 }

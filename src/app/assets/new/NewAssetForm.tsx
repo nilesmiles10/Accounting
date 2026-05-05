@@ -167,7 +167,7 @@ export default function NewAssetForm({
       onSubmit={onSubmit}
       className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-5 space-y-4"
     >
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <label className="block">
           <span className="block text-xs text-zinc-500 mb-1">Code</span>
           <input
@@ -219,7 +219,7 @@ export default function NewAssetForm({
         />
       </label>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <label className="block">
           <span className="block text-xs text-zinc-500 mb-1">
             Aanschafdatum

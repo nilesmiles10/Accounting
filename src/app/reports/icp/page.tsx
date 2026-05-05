@@ -71,7 +71,7 @@ export default function IcpPage({
         </div>
       ) : (
         <section className="bg-[var(--surface)] border border-[var(--border)] rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">{/* mobile-overflow */}<table className="w-full text-sm">
             <thead className="text-[10px] text-zinc-500 uppercase tracking-wider bg-zinc-900/40">
               <tr>
                 <th className="text-left px-3 py-2 font-medium w-12">Land</th>
@@ -127,7 +127,7 @@ export default function IcpPage({
                 </td>
               </tr>
             </tbody>
-          </table>
+          </table></div>
         </section>
       )}
 

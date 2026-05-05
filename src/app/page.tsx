@@ -805,7 +805,7 @@ function AgingStrip({
     );
   }
   return (
-    <div className="grid grid-cols-5 gap-1 mt-2">
+    <div className="grid grid-cols-2 sm:grid-cols-5 gap-1 mt-2">
       {items.map((it) => {
         const v = buckets[it.key];
         return (
