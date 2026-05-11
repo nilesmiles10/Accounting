@@ -235,6 +235,7 @@ export default function InvoiceEditor({
       public_token: null,
       reminder_count: 0,
       last_reminder_at: null,
+      reminders_paused: invoice?.reminders_paused ?? 0,
       is_credit_note: invoice?.is_credit_note ?? 0,
       credits_invoice_id: invoice?.credits_invoice_id ?? null,
       created_at: invoice?.created_at || now,

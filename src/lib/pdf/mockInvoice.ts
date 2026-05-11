@@ -52,6 +52,7 @@ export function mockInvoice(
     public_token: null,
     reminder_count: 0,
     last_reminder_at: null,
+    reminders_paused: 0,
     is_credit_note: 0,
     credits_invoice_id: null,
     created_at: now,

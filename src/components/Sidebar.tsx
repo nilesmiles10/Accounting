@@ -19,6 +19,7 @@ import {
   History,
   BarChart3,
   Package,
+  Mail,
 } from "lucide-react";
 import { useAuth } from "@/components/AuthGate";
 import type { LucideIcon } from "lucide-react";
@@ -41,6 +42,7 @@ const navItems: NavItem[] = [
   { href: "/assets", label: "Activa", icon: Package },
   { href: "/journal", label: "Journaal", icon: History },
   { href: "/reports", label: "Rapportages", icon: BarChart3 },
+  { href: "/mail-log", label: "E-mail log", icon: Mail },
   { href: "/settings/companies", label: "Bedrijven", icon: Building2 },
   { href: "/settings", label: "Instellingen", icon: Settings },
 ];

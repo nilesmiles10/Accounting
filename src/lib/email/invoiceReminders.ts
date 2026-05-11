@@ -49,6 +49,10 @@ interface CandidateRow {
   company_id: string;
   sent_at: number;
   due_date: string;
+  status: string;
+  paid_at: number | null;
+  reminders_paused: number;
+  is_credit_note: number;
   reminder_count: number;
   last_reminder_at: number | null;
   invoice_reminder_days_after_due: number;
@@ -78,7 +82,8 @@ export async function runInvoiceReminders(): Promise<{
   const rows = db
     .prepare(
       `SELECT
-         i.id, i.company_id, i.sent_at, i.due_date,
+         i.id, i.company_id, i.sent_at, i.due_date, i.status, i.paid_at,
+         i.reminders_paused, i.is_credit_note,
          i.reminder_count, i.last_reminder_at,
          c.invoice_reminder_days_after_due,
          c.invoice_reminder_repeat_days,
@@ -86,6 +91,8 @@ export async function runInvoiceReminders(): Promise<{
        FROM invoices i
        JOIN companies c ON c.id = i.company_id
        WHERE i.status IN ('sent','overdue')
+         AND i.reminders_paused = 0
+         AND i.is_credit_note = 0
          AND c.invoice_reminder_max > 0`,
     )
     .all() as CandidateRow[];
@@ -136,6 +143,9 @@ export async function sendInvoiceReminder(
     throw new Error("Postmark API token ontbreekt");
   }
 
+  // Re-fetch met fresh status, ook al draait dit vanuit candidate-loop:
+  // tussen candidate-query en send kan mollie webhook of bank-match de
+  // status hebben gewijzigd. Defense-in-depth.
   const invoice = getInvoiceWithLines(invoiceId);
   if (!invoice) throw new Error("Factuur bestaat niet");
   if (invoice.status === "draft") {
@@ -146,6 +156,12 @@ export async function sendInvoiceReminder(
   }
   if (invoice.status === "cancelled") {
     throw new Error("Geannuleerde factuur kan geen herinnering krijgen");
+  }
+  if (invoice.is_credit_note === 1) {
+    throw new Error("Creditnota's krijgen geen herinneringen");
+  }
+  if (invoice.reminders_paused === 1) {
+    throw new Error("Herinneringen zijn gepauzeerd voor deze factuur");
   }
 
   const { company, client } = getRenderContext(invoice);

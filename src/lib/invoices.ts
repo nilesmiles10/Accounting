@@ -58,6 +58,7 @@ export interface Invoice {
   public_token: string | null;
   reminder_count: number;
   last_reminder_at: number | null;
+  reminders_paused: number;
   is_credit_note: number;
   credits_invoice_id: string | null;
   created_at: number;
@@ -545,7 +546,7 @@ export function markPaid(id: string): InvoiceWithLines | null {
   }
   const now = Date.now();
   db.prepare(
-    "UPDATE invoices SET status = 'paid', paid_at = ?, updated_at = ? WHERE id = ?",
+    "UPDATE invoices SET status = 'paid', paid_at = ?, reminders_paused = 1, updated_at = ? WHERE id = ?",
   ).run(now, now, id);
   logEvent(id, "paid", null);
   // Auto-journalisatie: bank ↔ debiteuren

@@ -16,6 +16,8 @@ import {
   CreditCard,
   Link2,
   Check,
+  BellOff,
+  BellRing,
 } from "lucide-react";
 import type { InvoiceWithLines } from "@/lib/invoices";
 import { formatEUR, formatQty, formatDate } from "@/lib/format";
@@ -87,6 +89,32 @@ export default function InvoiceDetail({
         return;
       }
       router.push(`/invoices/${data.invoice.id}`);
+      router.refresh();
+    } catch {
+      setError("Verbindingsfout");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function togglePauseReminders() {
+    const newState = invoice.reminders_paused !== 1;
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch(
+        `/api/invoices/${invoice.id}/reminders-pause`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paused: newState }),
+        },
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Bijwerken mislukt");
+        return;
+      }
       router.refresh();
     } catch {
       setError("Verbindingsfout");
@@ -217,6 +245,32 @@ export default function InvoiceDetail({
                   <>
                     <Send className="w-4 h-4" />
                     Verstuur per e-mail
+                  </>
+                )}
+              </button>
+              <button
+                onClick={togglePauseReminders}
+                disabled={busy}
+                className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-40 ${
+                  invoice.reminders_paused === 1
+                    ? "bg-amber-500/15 text-amber-200 hover:bg-amber-500/25"
+                    : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                }`}
+                title={
+                  invoice.reminders_paused === 1
+                    ? "Auto-herinneringen staan uit voor deze factuur"
+                    : "Auto-herinneringen pauzeren"
+                }
+              >
+                {invoice.reminders_paused === 1 ? (
+                  <>
+                    <BellOff className="w-4 h-4" />
+                    Herinneringen uit
+                  </>
+                ) : (
+                  <>
+                    <BellRing className="w-4 h-4" />
+                    Herinneringen aan
                   </>
                 )}
               </button>

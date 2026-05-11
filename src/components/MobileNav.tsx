@@ -54,6 +54,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/ledger", label: "Grootboek", icon: BookOpen },
   { href: "/journal", label: "Journaal", icon: History },
   { href: "/reports", label: "Rapportages", icon: BarChart3 },
+  { href: "/mail-log", label: "E-mail log", icon: Mail },
   {
     href: "/settings",
     label: "Instellingen",
