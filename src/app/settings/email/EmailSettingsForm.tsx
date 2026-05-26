@@ -7,18 +7,23 @@ interface Props {
   initialHasToken: boolean;
   initialTokenPreview: string;
   initialTestMode: boolean;
+  initialAutoRemindersDisabled: boolean;
 }
 
 export default function EmailSettingsForm({
   initialHasToken,
   initialTokenPreview,
   initialTestMode,
+  initialAutoRemindersDisabled,
 }: Props) {
   const [token, setToken] = useState("");
   const [hasToken, setHasToken] = useState(initialHasToken);
   const [tokenPreview, setTokenPreview] = useState(initialTokenPreview);
   const [showToken, setShowToken] = useState(false);
   const [testMode, setTestMode] = useState(initialTestMode);
+  const [autoRemindersDisabled, setAutoRemindersDisabled] = useState(
+    initialAutoRemindersDisabled,
+  );
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -27,7 +32,10 @@ export default function EmailSettingsForm({
     setError("");
     setSaving(true);
     try {
-      const body: Record<string, unknown> = { test_mode: testMode };
+      const body: Record<string, unknown> = {
+        test_mode: testMode,
+        auto_reminders_disabled: autoRemindersDisabled,
+      };
       if (token.trim()) body.postmark_server_token = token.trim();
       const res = await fetch("/api/settings/email", {
         method: "PATCH",
@@ -110,6 +118,28 @@ export default function EmailSettingsForm({
           <span className="block text-[11px] text-zinc-500 mt-0.5">
             Verstuur niet echt; log alleen het verzoek. Handig tijdens setup
             of als Postmark-token nog niet volledig werkt.
+          </span>
+        </span>
+      </label>
+
+      <label className="flex items-start gap-2 text-sm text-zinc-300 pt-3 border-t border-[var(--border)]">
+        <input
+          type="checkbox"
+          checked={autoRemindersDisabled}
+          onChange={(e) => setAutoRemindersDisabled(e.target.checked)}
+          className="mt-0.5"
+        />
+        <span>
+          <span className="font-medium text-amber-300">
+            Auto-herinneringen uitzetten (globaal)
+          </span>
+          <span className="block text-[11px] text-zinc-500 mt-0.5">
+            Schakelt de automatische herinnerings-runner volledig uit
+            voor zowel facturen als offertes. Handmatig op
+            &quot;Stuur herinnering&quot; klikken blijft werken. Aan-
+            zetten als je tijdelijk niet wil dat het systeem zelf mails
+            stuurt — bijvoorbeeld tijdens vakantie of vlak na een
+            grote storing.
           </span>
         </span>
       </label>

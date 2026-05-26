@@ -99,6 +99,9 @@ export async function runQuoteReminders(): Promise<{
     );
     return { reminders: 0, expiry_warnings: 0, errors: 0 };
   }
+  if (settings.auto_reminders_disabled) {
+    return { reminders: 0, expiry_warnings: 0, errors: 0 };
+  }
 
   const db = getDb();
   const now = Date.now();

@@ -34,6 +34,10 @@ export async function PATCH(request: NextRequest) {
         typeof body.test_mode === "boolean"
           ? body.test_mode
           : current.test_mode,
+      auto_reminders_disabled:
+        typeof body.auto_reminders_disabled === "boolean"
+          ? body.auto_reminders_disabled
+          : current.auto_reminders_disabled,
     };
     setEmailSettings(next);
     return NextResponse.json({ ok: true });

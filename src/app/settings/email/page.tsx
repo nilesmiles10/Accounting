@@ -34,6 +34,9 @@ export default function EmailSettingsPage() {
             : ""
         }
         initialTestMode={settings.test_mode}
+        initialAutoRemindersDisabled={
+          settings.auto_reminders_disabled === true
+        }
       />
 
       <section className="bg-zinc-900/30 border border-[var(--border)] rounded-xl p-5 text-xs text-zinc-400 space-y-2">

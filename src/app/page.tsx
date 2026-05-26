@@ -35,7 +35,7 @@ import { generateVatReport, quarterRange } from "@/lib/reports/vat";
 import { isQuarterClosed, type Quarter } from "@/lib/ledger/periods";
 import { getAccountBalance } from "@/lib/ledger/accounts";
 import { formatEUR } from "@/lib/format";
-import { getSetting, setSetting } from "@/lib/settings";
+import { getSetting, setSetting, getEmailSettings } from "@/lib/settings";
 import { runQuoteReminders } from "@/lib/email/quoteReminders";
 import { runInvoiceReminders } from "@/lib/email/invoiceReminders";
 import { log } from "@/lib/logger";
@@ -183,6 +183,9 @@ export default async function AccountingDashboard() {
     reviewableCount > 0 ||
     (vat.to_pay_cents !== 0 && !vatClosed);
 
+  const emailSettings = getEmailSettings();
+  const autoRemindersOff = emailSettings.auto_reminders_disabled === true;
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <header className="flex items-center justify-between gap-3 flex-wrap">
@@ -209,6 +212,17 @@ export default async function AccountingDashboard() {
           </Link>
         </div>
       </header>
+
+      {autoRemindersOff && (
+        <Link
+          href="/settings/email"
+          className="block bg-amber-500/5 border border-amber-500/30 rounded-xl p-3 text-sm text-amber-200 hover:bg-amber-500/10"
+        >
+          <span className="font-medium">Auto-herinneringen staan uit.</span>{" "}
+          Geen enkele factuur of offerte krijgt automatisch een herinnering.
+          Klik om weer aan te zetten in E-mail instellingen.
+        </Link>
+      )}
 
       {/* ───── Action items (urgentie) ───── */}
       {hasActions && (

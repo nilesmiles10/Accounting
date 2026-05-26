@@ -30,6 +30,11 @@ export function setSetting<T>(key: string, value: T): void {
 export interface EmailSettings {
   postmark_server_token: string;
   test_mode: boolean;
+  /** Globale kill-switch voor automatische herinneringen. Wanneer true:
+   * geen enkele herinnering wordt nog automatisch verstuurd, ook niet
+   * vanaf de dashboard cron. Handmatige "Stuur herinnering"-knop blijft
+   * werken. Standaard false (auto-herinneringen aan). */
+  auto_reminders_disabled?: boolean;
 }
 
 const EMAIL_KEY = "email";
@@ -38,6 +43,7 @@ export function getEmailSettings(): EmailSettings {
   return getSetting<EmailSettings>(EMAIL_KEY, {
     postmark_server_token: "",
     test_mode: false,
+    auto_reminders_disabled: false,
   });
 }
 

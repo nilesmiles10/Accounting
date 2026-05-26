@@ -77,6 +77,11 @@ export async function runInvoiceReminders(): Promise<{
   if (!settings.postmark_server_token && !settings.test_mode) {
     return { processed: 0, sent: 0, failed: 0 };
   }
+  // Globale kill-switch — handmatige "/api/invoices/[id]/remind" blijft
+  // wel werken (die roept sendInvoiceReminder direct aan).
+  if (settings.auto_reminders_disabled) {
+    return { processed: 0, sent: 0, failed: 0 };
+  }
 
   const db = getDb();
   const rows = db
