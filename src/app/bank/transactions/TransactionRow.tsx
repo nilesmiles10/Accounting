@@ -403,13 +403,12 @@ export default function TransactionRow({
                   className="col-span-3 px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-zinc-200"
                 />
               </div>
-              <p className="text-[11px] text-zinc-600">
-                Wordt geboekt:{" "}
-                {incoming
-                  ? `Debet ${tx.bank_account_id ? "bank" : "?"} / Credit ${accountCode || "..."}`
-                  : `Debet ${accountCode || "..."} / Credit bank`}{" "}
-                · {formatEUR(Math.abs(tx.amount_cents))}
-              </p>
+              <BookingPreview
+                amountCents={Math.abs(tx.amount_cents)}
+                accountCode={accountCode}
+                vatCode={vatCode}
+                incoming={incoming}
+              />
               <div className="flex gap-2">
                 <button
                   onClick={bookOnAccount}
@@ -427,6 +426,86 @@ export default function TransactionRow({
         </div>
       )}
     </div>
+  );
+}
+
+function BookingPreview({
+  amountCents,
+  accountCode,
+  vatCode,
+  incoming,
+}: {
+  amountCents: number;
+  accountCode: string;
+  vatCode: string;
+  incoming: boolean;
+}) {
+  const rate = vatCode === "21" ? 21 : vatCode === "9" ? 9 : 0;
+  const splitVat = rate > 0;
+  const vatCents = splitVat
+    ? Math.round((amountCents * rate) / (100 + rate))
+    : 0;
+  const baseCents = amountCents - vatCents;
+  const target = accountCode || "...";
+  const vatAcct = incoming ? "1700" : "1500";
+  const vatRole = incoming ? "BTW te betalen" : "BTW vorderingen";
+
+  return (
+    <div className="text-[11px] text-zinc-500 bg-zinc-900/30 border border-zinc-800 rounded px-2 py-1.5 space-y-0.5">
+      <p className="text-zinc-400">Wordt geboekt:</p>
+      {incoming ? (
+        <>
+          <Line debit="bank" credit={target} cents={baseCents} />
+          {splitVat && (
+            <Line
+              debit="bank"
+              credit={`${vatAcct} (${vatRole})`}
+              cents={vatCents}
+              extra={`BTW ${rate}%`}
+            />
+          )}
+        </>
+      ) : (
+        <>
+          <Line debit={target} credit="bank" cents={baseCents} />
+          {splitVat && (
+            <Line
+              debit={`${vatAcct} (${vatRole})`}
+              credit="bank"
+              cents={vatCents}
+              extra={`BTW ${rate}%`}
+            />
+          )}
+        </>
+      )}
+      <p className="text-zinc-600 pt-0.5">
+        Totaal {formatEUR(amountCents)}
+        {splitVat &&
+          ` (grondslag ${formatEUR(baseCents)} + BTW ${formatEUR(vatCents)})`}
+      </p>
+    </div>
+  );
+}
+
+function Line({
+  debit,
+  credit,
+  cents,
+  extra,
+}: {
+  debit: string;
+  credit: string;
+  cents: number;
+  extra?: string;
+}) {
+  return (
+    <p className="font-mono">
+      <span className="text-emerald-300">Debet</span> {debit}{" "}
+      <span className="text-zinc-600">/</span>{" "}
+      <span className="text-red-300">Credit</span> {credit}{" "}
+      <span className="text-zinc-400">· {formatEUR(cents)}</span>
+      {extra && <span className="text-zinc-600 ml-1">{extra}</span>}
+    </p>
   );
 }
 

@@ -375,35 +375,72 @@ export function bookTransactionDirect(input: {
   // zodat de kenmerk meekomt in de grootboekkaart-rij.
   const lineDesc = bankRef ? `${subject} — ${bankRef}` : subject;
 
+  // BTW-splitsing voor 21% / 9% (NL-tarieven). Inclusief bedrag wordt
+  // gesplitst in grondslag + BTW; BTW komt op 1500 (voorbelasting, bij
+  // uitgaande betaling = inkoop) of 1700 (verschuldigd, bij inkomende
+  // betaling = omzet). Bedragen in cents, BTW = round(amount * rate /
+  // (100 + rate)) zodat afronding aan de BTW-kant gebeurt en de
+  // grondslag het sluitstuk is — geen halve centen tegen 1500/1700.
+  const ACCOUNT_VAT_RECEIVABLE = "1500"; // voorbelasting
+  const ACCOUNT_VAT_PAYABLE = "1700"; // af te dragen
+  const vatRate =
+    input.vat_code === "21" ? 21 : input.vat_code === "9" ? 9 : 0;
+  const splitVat = vatRate > 0;
+  const vatCents = splitVat
+    ? Math.round((amount * vatRate) / (100 + vatRate))
+    : 0;
+  const baseCents = amount - vatCents;
+
   let journalId: string | null = null;
   try {
-    const lines: Parameters<typeof post>[0]["lines"] = incoming
-      ? [
-          {
-            account_code: account.account_code,
-            description: lineDesc,
-            debit_cents: amount,
-          },
-          {
-            account_code: input.account_code,
-            description: lineDesc,
-            credit_cents: amount,
-            vat_code: input.vat_code ?? null,
-          },
-        ]
-      : [
-          {
-            account_code: input.account_code,
-            description: lineDesc,
-            debit_cents: amount,
-            vat_code: input.vat_code ?? null,
-          },
-          {
-            account_code: account.account_code,
-            description: lineDesc,
-            credit_cents: amount,
-          },
-        ];
+    let lines: Parameters<typeof post>[0]["lines"];
+    if (incoming) {
+      // Geld binnen: Debet bank totaal / Credit omzet excl + Credit BTW te betalen
+      lines = [
+        {
+          account_code: account.account_code,
+          description: lineDesc,
+          debit_cents: amount,
+        },
+        {
+          account_code: input.account_code,
+          description: lineDesc,
+          credit_cents: baseCents,
+          vat_code: input.vat_code ?? null,
+        },
+      ];
+      if (splitVat) {
+        lines.push({
+          account_code: ACCOUNT_VAT_PAYABLE,
+          description: `BTW ${vatRate}% — ${lineDesc}`,
+          credit_cents: vatCents,
+          vat_code: input.vat_code ?? null,
+        });
+      }
+    } else {
+      // Geld uit: Debet kosten excl + Debet BTW vorderingen / Credit bank totaal
+      lines = [
+        {
+          account_code: input.account_code,
+          description: lineDesc,
+          debit_cents: baseCents,
+          vat_code: input.vat_code ?? null,
+        },
+      ];
+      if (splitVat) {
+        lines.push({
+          account_code: ACCOUNT_VAT_RECEIVABLE,
+          description: `BTW ${vatRate}% — ${lineDesc}`,
+          debit_cents: vatCents,
+          vat_code: input.vat_code ?? null,
+        });
+      }
+      lines.push({
+        account_code: account.account_code,
+        description: lineDesc,
+        credit_cents: amount,
+      });
+    }
     const entry = post({
       date: tx.date,
       description: `${subject} · ${account.display_name}${bankRef ? ` · ${bankRef}` : ""}`,
