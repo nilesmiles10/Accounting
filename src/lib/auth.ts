@@ -38,3 +38,33 @@ export async function checkAuth(
 
 /** Backward-compat alias zodat bestaande call-sites blijven werken. */
 export const checkAccountingAccess = checkAuth;
+
+/**
+ * Geef de huidige session terug (of null bij geen/ongeldige sessie).
+ * Voor routes die session-data nodig hebben — admin check, user_id voor
+ * logging, etc.
+ */
+export async function getCurrentSession(request: NextRequest) {
+  const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  return validateSession(token || "");
+}
+
+/**
+ * Admin-only check. Returns 401 if no session, 403 if role !== admin.
+ * Gebruikt voor /api/auth/users/* en andere admin-routes.
+ */
+export async function checkAdmin(
+  request: NextRequest,
+): Promise<NextResponse | null> {
+  const session = await getCurrentSession(request);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (session.role !== "admin") {
+    return NextResponse.json(
+      { error: "Alleen admin mag dit doen" },
+      { status: 403 },
+    );
+  }
+  return null;
+}

@@ -1,5 +1,12 @@
 import Link from "next/link";
-import { Building2, Mail, Package, CreditCard } from "lucide-react";
+import {
+  Building2,
+  Mail,
+  Package,
+  CreditCard,
+  Shield,
+  Users,
+} from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +66,30 @@ export default function SettingsPage() {
             <p className="text-sm font-semibold text-zinc-100">Mollie</p>
             <p className="text-xs text-zinc-500">
               Betaallinks (iDEAL / creditcard) in facturen
+            </p>
+          </div>
+        </Link>
+        <Link
+          href="/settings/security"
+          className="flex items-center gap-3 bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4 hover:border-emerald-500/40 transition-colors"
+        >
+          <Shield className="w-5 h-5 text-emerald-400" />
+          <div>
+            <p className="text-sm font-semibold text-zinc-100">Beveiliging</p>
+            <p className="text-xs text-zinc-500">
+              2FA en wachtwoord van je eigen account
+            </p>
+          </div>
+        </Link>
+        <Link
+          href="/settings/users"
+          className="flex items-center gap-3 bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4 hover:border-emerald-500/40 transition-colors"
+        >
+          <Users className="w-5 h-5 text-emerald-400" />
+          <div>
+            <p className="text-sm font-semibold text-zinc-100">Gebruikers</p>
+            <p className="text-xs text-zinc-500">
+              Toegang beheren, rol wisselen, reset wachtwoord/2FA
             </p>
           </div>
         </Link>
