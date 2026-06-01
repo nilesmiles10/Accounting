@@ -57,11 +57,13 @@ const DEFAULT_CHART: Array<
   ["1130", "Creditcard", "asset", null, null],
   ["1300", "Debiteuren", "asset", null, "Te ontvangen van klanten"],
   ["1500", "BTW vorderingen", "asset", null, "Voorbelasting (te ontvangen BTW)"],
+  ["1990", "Kruisposten", "asset", null, "Tussenrekening voor onderlinge bank-overboekingen en geld onderweg. Saldo moet richting nul na reconciliatie."],
 
-  // 1600/1700/1900 — Schulden
+  // 1600/1700/1900/1910 — Schulden
   ["1600", "Crediteuren", "liability", null, "Te betalen aan leveranciers"],
   ["1700", "BTW te betalen", "liability", null, "Verschuldigde BTW"],
   ["1900", "Rekening-courant directie", "liability", null, "Privé-onttrekkingen / DGA"],
+  ["1910", "Privé-opnamen", "liability", null, "Onttrekkingen voor privé-gebruik. Bij BV: gebruik 1900 RC directie. Bij eenmanszaak: deze rekening."],
 
   // 4xxx — Bedrijfskosten
   ["4000", "Algemene kosten", "expense", 21, null],
