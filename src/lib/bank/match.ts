@@ -329,6 +329,121 @@ export function applyMatch(input: {
  *
  * Markeert transactie als matched zodat 'ie uit de unmatched-lijst gaat.
  */
+export interface DirectBookingSuggestion {
+  account_code: string;
+  account_name: string;
+  vat_code: string | null;
+  seen_count: number;
+}
+
+/**
+ * Patroonherkenning voor directe boekingen.
+ *
+ * Kijkt naar eerdere bank_matches met target_type='account' (jij hebt
+ * eerder iets handmatig direct geboekt) en zoekt een match op
+ * counterparty_name of description-fingerprint. Geeft de meest-
+ * voorkomende (account_code, vat_code) combinatie terug.
+ *
+ * Niet auto-executen — alleen voorstel. Auto-execute zou bij
+ * incidentele directe boekingen verkeerd kunnen werken (een Stripe-
+ * fee dummy is geen Stripe-payout).
+ *
+ * Drempels:
+ *   - >=2 zelfde combinatie → suggested
+ *   - 1x → niet getoond (1 datapunt is geen patroon)
+ *
+ * Fingerprint-strategie: gebruik counterparty_name als die er is,
+ * anders eerste 40 chars van description (lowercase, trim). Bank
+ * costs hebben vaak geen counterparty, dus description fallback is
+ * essentieel.
+ */
+export function suggestDirectBooking(
+  txId: string,
+): DirectBookingSuggestion | null {
+  const tx = getTransaction(txId);
+  if (!tx) return null;
+  if (tx.status !== "unmatched") return null;
+
+  const db = getDb();
+  const tenantId = getCurrentTenantId();
+
+  const cp = (tx.counterparty_name || "").trim().toLowerCase();
+  const descKey = (tx.description || "").trim().toLowerCase().slice(0, 40);
+  // Eén van de twee moet aanwezig zijn — zonder pattern-key geen match
+  if (!cp && descKey.length < 4) return null;
+
+  const incoming = tx.amount_cents > 0;
+
+  // Match op zowel cp als descKey: trefkans groter, alleen exact-prefix
+  // op desc-key (eerste 40 chars) en exact-lowercase op cp.
+  const row = db
+    .prepare(
+      `SELECT jl.account_code, jl.vat_code,
+              a.name AS account_name,
+              COUNT(*) AS n
+       FROM bank_matches bm
+       JOIN bank_transactions bt ON bt.id = bm.transaction_id
+       JOIN journal_entries je ON je.id = bm.journal_entry_id
+       JOIN journal_lines jl ON jl.journal_entry_id = je.id
+       LEFT JOIN chart_of_accounts a ON a.code = jl.account_code
+         AND a.tenant_id = bm.tenant_id
+       WHERE bm.tenant_id = ?
+         AND bm.target_type = 'account'
+         AND bt.id != ?
+         AND (
+           (? != '' AND LOWER(COALESCE(bt.counterparty_name, '')) = ?) OR
+           (? != '' AND LOWER(SUBSTR(COALESCE(bt.description, ''), 1, 40)) = ?)
+         )
+         AND ((? = 1 AND bt.amount_cents > 0) OR (? = 0 AND bt.amount_cents < 0))
+         AND jl.account_code NOT LIKE '11%'
+         AND jl.account_code NOT IN ('1500', '1700')
+       GROUP BY jl.account_code, jl.vat_code
+       ORDER BY n DESC, jl.account_code
+       LIMIT 1`,
+    )
+    .get(
+      tenantId,
+      tx.id,
+      cp,
+      cp,
+      descKey,
+      descKey,
+      incoming ? 1 : 0,
+      incoming ? 1 : 0,
+    ) as
+    | {
+        account_code: string;
+        vat_code: string | null;
+        account_name: string | null;
+        n: number;
+      }
+    | undefined;
+
+  if (!row || row.n < 2) return null;
+  return {
+    account_code: row.account_code,
+    account_name: row.account_name || row.account_code,
+    vat_code: row.vat_code,
+    seen_count: row.n,
+  };
+}
+
+/**
+ * Batch-versie voor de transacties-listing pagina. Eén query voor N
+ * transacties tegelijk i.p.v. N afzonderlijke calls.
+ */
+export function suggestDirectBookingsBatch(
+  txIds: string[],
+): Map<string, DirectBookingSuggestion> {
+  const result = new Map<string, DirectBookingSuggestion>();
+  if (txIds.length === 0) return result;
+  for (const id of txIds) {
+    const s = suggestDirectBooking(id);
+    if (s) result.set(id, s);
+  }
+  return result;
+}
+
 export function bookTransactionDirect(input: {
   transaction_id: string;
   account_code: string;

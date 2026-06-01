@@ -6,6 +6,7 @@ import {
   type BankTxStatus,
 } from "@/lib/bank/transactions";
 import { listAccounts } from "@/lib/ledger/accounts";
+import { suggestDirectBookingsBatch } from "@/lib/bank/match";
 import TransactionRow from "./TransactionRow";
 import AutoMatchButton from "../AutoMatchButton";
 
@@ -36,6 +37,13 @@ export default function TransactionsPage({
     limit: 200,
   });
   const accountById = new Map(accounts.map((a) => [a.id, a]));
+
+  // Patroonherkenning: voor unmatched transactions zoek je vergelijkbare
+  // eerder-direct-geboekte combinatie. Geeft pre-fill suggestie.
+  const suggestions =
+    status === "unmatched"
+      ? suggestDirectBookingsBatch(txs.map((t) => t.id))
+      : new Map();
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -93,6 +101,7 @@ export default function TransactionsPage({
               }
               status={status}
               bookableAccounts={bookableAccounts}
+              directBookingSuggestion={suggestions.get(tx.id) || null}
             />
           ))}
         </div>

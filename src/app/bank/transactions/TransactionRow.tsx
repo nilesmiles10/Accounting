@@ -2,12 +2,20 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Check, X, Loader2, ChevronDown, ChevronRight } from "lucide-react";
+import {
+  Check,
+  X,
+  Loader2,
+  ChevronDown,
+  ChevronRight,
+  Wand2,
+} from "lucide-react";
 import type {
   BankTransaction,
   BankTxStatus,
 } from "@/lib/bank/transactions";
 import type { Account } from "@/lib/ledger/accounts";
+import type { DirectBookingSuggestion } from "@/lib/bank/match";
 import { formatEUR } from "@/lib/format";
 
 interface PurchaseHit {
@@ -24,27 +32,39 @@ export default function TransactionRow({
   accountName,
   status,
   bookableAccounts,
+  directBookingSuggestion,
 }: {
   tx: BankTransaction;
   accountName: string;
   status: BankTxStatus;
   bookableAccounts: Account[];
+  directBookingSuggestion?: DirectBookingSuggestion | null;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [expanded, setExpanded] = useState(false);
-  const [tab, setTab] = useState<"invoice" | "account">("invoice");
+  // Bij een gevonden patroon: open de 'direct boeken' tab meteen
+  const [tab, setTab] = useState<"invoice" | "account">(
+    directBookingSuggestion ? "account" : "invoice",
+  );
 
   // Tab 1: zoek inkoopfacturen
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<PurchaseHit[] | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Tab 2: direct boeken
-  const [accountCode, setAccountCode] = useState("");
+  // Tab 2: direct boeken — pre-fill als er een patroon-match is
+  const [accountCode, setAccountCode] = useState(
+    directBookingSuggestion?.account_code || "",
+  );
   const [bookDescription, setBookDescription] = useState("");
-  const [vatCode, setVatCode] = useState<string>("");
+  const [vatCode, setVatCode] = useState<string>(
+    directBookingSuggestion?.vat_code || "",
+  );
+  // Als suggestie er is, telt het als 'user touched' want hij stelde het al
+  // expliciet zo vast bij vorige boekingen.
+  const initialVatTouched = !!directBookingSuggestion?.vat_code;
 
   const incoming = tx.amount_cents > 0;
 
@@ -112,7 +132,7 @@ export default function TransactionRow({
 
   // Suggereer BTW-code o.b.v. default_vat_rate van gekozen rekening,
   // maar respecteer eigen keuze als user al iets handmatig heeft gezet.
-  const [vatTouched, setVatTouched] = useState(false);
+  const [vatTouched, setVatTouched] = useState(initialVatTouched);
   useEffect(() => {
     if (vatTouched) return;
     if (!accountCode) {
@@ -234,6 +254,15 @@ export default function TransactionRow({
             {tx.description || tx.counterparty_iban || "—"}
           </p>
         </button>
+        {directBookingSuggestion && status === "unmatched" && (
+          <span
+            className="inline-flex items-center gap-1 text-[10px] text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded flex-shrink-0"
+            title={`Eerder ${directBookingSuggestion.seen_count}× geboekt op ${directBookingSuggestion.account_code} ${directBookingSuggestion.account_name}`}
+          >
+            <Wand2 className="w-3 h-3" />
+            {directBookingSuggestion.account_code}
+          </span>
+        )}
         <div
           className={`text-sm font-mono font-semibold ${
             incoming ? "text-emerald-300" : "text-zinc-300"
@@ -358,6 +387,23 @@ export default function TransactionRow({
 
           {tab === "account" && (
             <div className="space-y-2">
+              {directBookingSuggestion && (
+                <div className="bg-emerald-500/5 border border-emerald-500/30 rounded px-3 py-2 text-xs space-y-1">
+                  <p className="text-emerald-300 inline-flex items-center gap-1.5">
+                    <Wand2 className="w-3.5 h-3.5" />
+                    Patroon herkend: je hebt vergelijkbare transacties{" "}
+                    {directBookingSuggestion.seen_count}× geboekt op{" "}
+                    <span className="font-mono">
+                      {directBookingSuggestion.account_code}
+                    </span>{" "}
+                    {directBookingSuggestion.account_name}
+                    {directBookingSuggestion.vat_code &&
+                      ` (BTW ${directBookingSuggestion.vat_code === "0" ? "0%" : directBookingSuggestion.vat_code + "%"})`}
+                    . Velden zijn alvast ingevuld — controleer en klik
+                    &quot;Boek direct&quot;.
+                  </p>
+                </div>
+              )}
               <p className="text-xs text-zinc-500">
                 Boekt direct op de gekozen rekening — geen factuur nodig.
                 Voor bankkosten, privé-opnames, BTW-afdracht, overboekingen.
