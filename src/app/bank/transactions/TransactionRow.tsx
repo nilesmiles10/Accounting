@@ -44,6 +44,7 @@ export default function TransactionRow({
   // Tab 2: direct boeken
   const [accountCode, setAccountCode] = useState("");
   const [bookDescription, setBookDescription] = useState("");
+  const [vatCode, setVatCode] = useState<string>("");
 
   const incoming = tx.amount_cents > 0;
 
@@ -109,6 +110,25 @@ export default function TransactionRow({
     }
   }
 
+  // Suggereer BTW-code o.b.v. default_vat_rate van gekozen rekening,
+  // maar respecteer eigen keuze als user al iets handmatig heeft gezet.
+  const [vatTouched, setVatTouched] = useState(false);
+  useEffect(() => {
+    if (vatTouched) return;
+    if (!accountCode) {
+      setVatCode("");
+      return;
+    }
+    const acct = bookableAccounts.find((a) => a.code === accountCode);
+    if (!acct) return;
+    const rate = acct.default_vat_rate;
+    if (rate === 21) setVatCode("21");
+    else if (rate === 9) setVatCode("9");
+    else if (rate === 0) setVatCode("0");
+    else setVatCode("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountCode]);
+
   async function bookOnAccount() {
     if (!accountCode) {
       setErr("Kies eerst een grootboekrekening");
@@ -125,6 +145,7 @@ export default function TransactionRow({
           body: JSON.stringify({
             account_code: accountCode,
             description: bookDescription || undefined,
+            vat_code: vatCode || null,
           }),
         },
       );
@@ -341,11 +362,11 @@ export default function TransactionRow({
                 Boekt direct op de gekozen rekening — geen factuur nodig.
                 Voor bankkosten, privé-opnames, BTW-afdracht, overboekingen.
               </p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-12 gap-2">
                 <select
                   value={accountCode}
                   onChange={(e) => setAccountCode(e.target.value)}
-                  className="px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-zinc-200"
+                  className="col-span-7 px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-zinc-200"
                 >
                   <option value="">— kies grootboekrekening —</option>
                   {groupAccounts(bookableAccounts).map((g) => (
@@ -358,12 +379,28 @@ export default function TransactionRow({
                     </optgroup>
                   ))}
                 </select>
+                <select
+                  value={vatCode}
+                  onChange={(e) => {
+                    setVatTouched(true);
+                    setVatCode(e.target.value);
+                  }}
+                  title="BTW-code op deze regel"
+                  className="col-span-2 px-2 py-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-zinc-200"
+                >
+                  <option value="">— BTW —</option>
+                  <option value="0">0% / geen</option>
+                  <option value="9">9%</option>
+                  <option value="21">21%</option>
+                  <option value="0EU">0% EU verlegd</option>
+                  <option value="0EX">0% export</option>
+                </select>
                 <input
                   type="text"
                   value={bookDescription}
                   onChange={(e) => setBookDescription(e.target.value)}
-                  placeholder="Omschrijving (optioneel)"
-                  className="px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-zinc-200"
+                  placeholder="Omschrijving"
+                  className="col-span-3 px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-zinc-200"
                 />
               </div>
               <p className="text-[11px] text-zinc-600">
