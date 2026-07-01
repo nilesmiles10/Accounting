@@ -25,6 +25,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Standalone build neemt src/ niet mee — migrate-bestanden expliciet
 # kopieren naar /app/migrations.
 COPY --from=builder --chown=nextjs:nodejs /app/src/lib/migrations ./migrations
+# Backup script — geroepen via `docker exec` vanaf host-cron. Zie
+# scripts/backup.sh + deploy/BACKUP.md.
+COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 # Sharp is een native module — Next standalone trace pakt 'm niet altijd
 # correct mee. Plat copieren naar de runner zodat dynamic import werkt.
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/sharp ./node_modules/sharp
