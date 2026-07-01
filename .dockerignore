@@ -5,6 +5,7 @@ node_modules
 *.md
 !README.md
 references/
-scripts/
+# scripts/ NIET uitsluiten — backup.js wordt binnen container gedraaid
+# via `docker exec` vanuit host-cron. Zie deploy/BACKUP.md.
 .DS_Store
 .env*.local
