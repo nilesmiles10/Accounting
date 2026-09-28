@@ -53,8 +53,9 @@ export function generatePnL(
       `SELECT a.code, a.name,
               COALESCE(SUM(jl.credit_cents), 0) - COALESCE(SUM(jl.debit_cents), 0) AS amount
        FROM chart_of_accounts a
-       LEFT JOIN journal_lines jl ON jl.account_code = a.code
-       LEFT JOIN journal_entries je ON je.id = jl.journal_entry_id
+       LEFT JOIN (journal_lines jl
+                  JOIN journal_entries je ON je.id = jl.journal_entry_id)
+         ON jl.account_code = a.code
          AND je.tenant_id = ? AND je.date BETWEEN ? AND ?
          ${companyFilter}
        WHERE a.tenant_id = ? AND a.type = 'income'
@@ -73,8 +74,9 @@ export function generatePnL(
       `SELECT a.code, a.name,
               COALESCE(SUM(jl.debit_cents), 0) - COALESCE(SUM(jl.credit_cents), 0) AS amount
        FROM chart_of_accounts a
-       LEFT JOIN journal_lines jl ON jl.account_code = a.code
-       LEFT JOIN journal_entries je ON je.id = jl.journal_entry_id
+       LEFT JOIN (journal_lines jl
+                  JOIN journal_entries je ON je.id = jl.journal_entry_id)
+         ON jl.account_code = a.code
          AND je.tenant_id = ? AND je.date BETWEEN ? AND ?
          ${companyFilter}
        WHERE a.tenant_id = ? AND a.type = 'expense'
