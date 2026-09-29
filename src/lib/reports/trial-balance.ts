@@ -45,8 +45,9 @@ export function generateTrialBalance(
               COALESCE(SUM(jl.debit_cents), 0) AS debit,
               COALESCE(SUM(jl.credit_cents), 0) AS credit
        FROM chart_of_accounts a
-       LEFT JOIN journal_lines jl ON jl.account_code = a.code
-       LEFT JOIN journal_entries je ON je.id = jl.journal_entry_id
+       LEFT JOIN (journal_lines jl
+                  JOIN journal_entries je ON je.id = jl.journal_entry_id)
+         ON jl.account_code = a.code
          AND je.tenant_id = ? AND je.date BETWEEN ? AND ?
        WHERE a.tenant_id = ?
        GROUP BY a.code, a.name, a.type
